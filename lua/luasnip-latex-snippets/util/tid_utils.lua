@@ -21,8 +21,9 @@ M.is_math = function(treesitter)
       local open_s = idxs[i]
       local close_s = idxs[i + 1]
       local content_start = open_s + 2
-      local content_end = close_s - 1
-      if col1 >= content_start and col1 <= content_end then
+      -- include the first '$' of the closing '$$' so "$$$$" with cursor at 3rd '$' counts as inside
+      local content_end_inclusive = close_s
+      if col1 >= content_start and col1 <= content_end_inclusive then
         return true
       end
     end
