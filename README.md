@@ -1,7 +1,6 @@
 # luasnip-latex-snippets
 
-A port of [Gilles Castel's](https://github.com/gillescastel/latex-snippets)
-snippets for the [LuaSnip Engine](https://github.com/L3MON4D3/LuaSnip).
+A port of [iurimateus/luasnip-latex-snippets.nvim](https://github.com/iurimateus/luasnip-latex-snippets.nvim). Add support for tiddlywiki.
 
 ## Why?
 

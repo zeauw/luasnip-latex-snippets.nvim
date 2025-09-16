@@ -3,6 +3,7 @@ local M = {}
 local default_opts = {
   use_treesitter = false,
   allow_on_markdown = true,
+  allow_on_tiddlywiki = true
 }
 
 M.setup = function(opts)
@@ -28,6 +29,17 @@ M.setup = function(opts)
       once = true,
       callback = function()
         M.setup_markdown()
+      end,
+    })
+  end
+
+  if opts.allow_on_tiddlywiki then
+    vim.api.nvim_create_autocmd("FileType", {
+      pattern = { "tid", "tiddlywiki" },
+      group = augroup,
+      once = true,
+      callback = function()
+        M.setup_tiddlywiki()
       end,
     })
   end
@@ -133,5 +145,53 @@ M.setup_markdown = function()
     default_priority = 0,
   })
 end
+
+M.setup_tiddlywiki = function()
+  local ls = require("luasnip")
+  local utils = require("luasnip-latex-snippets.util.utils")
+  local tid_utils = require("luasnip-latex-snippets.util.tid_utils")
+  local pipe = utils.pipe
+
+  local is_math = utils.with_opts(tid_utils.is_math, true)
+  local not_math = utils.with_opts(tid_utils.not_math, true)
+
+  local math_i = require("luasnip-latex-snippets/math_i").retrieve(is_math)
+  ls.add_snippets("tiddlywiki", math_i, { default_priority = 0 })
+
+  local autosnippets = _autosnippets(is_math, not_math)
+  local trigger_of_snip = function(s)
+    return s.trigger
+  end
+
+  local to_filter = {}
+  for _, str in ipairs({
+    "wA",
+    "bwA",
+  }) do
+    local t = require(("luasnip-latex-snippets.%s"):format(str)).retrieve(not_math)
+    vim.list_extend(to_filter, vim.tbl_map(trigger_of_snip, t))
+  end
+
+  local filtered = vim.tbl_filter(function(s)
+    return not vim.tbl_contains(to_filter, s.trigger)
+  end, autosnippets)
+
+  local parse_snippet = ls.extend_decorator.apply(ls.parser.parse_snippet, {
+    condition = pipe({ not_math }),
+  }) --[[@as function]]
+
+  -- tex delimiters
+  local normal_wA_tex = {
+    parse_snippet({ trig = "mk", name = "Math" }, "$$${1:${TM_SELECTED_TEXT}}$$"),
+    parse_snippet({ trig = "dm", name = "Block Math" }, "$$\n\t${1:${TM_SELECTED_TEXT}}\n$$"),
+  }
+  vim.list_extend(filtered, normal_wA_tex)
+
+  ls.add_snippets("tiddlywiki", filtered, {
+    type = "autosnippets",
+    default_priority = 0,
+  })
+end
+
 
 return M
